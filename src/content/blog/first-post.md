@@ -1,16 +1,113 @@
 ---
-title: 'First post'
-description: 'Lorem ipsum dolor sit amet'
-pubDate: 'Jul 08 2022'
-heroImage: '/blog-placeholder-3.jpg'
+title: "Docker - Build, Ship & Run"
+description: "In this artcile, i will show you the complete steps on building a small web app and ship it to docker-hub image registary and run it in other system independently"
+pubDate: "Feb 17 2024"
+heroImage: "/blog-placeholder-3.jpg"
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Vitae ultricies leo integer malesuada nunc vel risus commodo viverra. Adipiscing enim eu turpis egestas pretium. Euismod elementum nisi quis eleifend quam adipiscing. In hac habitasse platea dictumst vestibulum. Sagittis purus sit amet volutpat. Netus et malesuada fames ac turpis egestas. Eget magna fermentum iaculis eu non diam phasellus vestibulum lorem. Varius sit amet mattis vulputate enim. Habitasse platea dictumst quisque sagittis. Integer quis auctor elit sed vulputate mi. Dictumst quisque sagittis purus sit amet.
+First will run a test server vm in our machine - make sure you have the cpu and ram capacity need.
 
-Morbi tristique senectus et netus. Id semper risus in hendrerit gravida rutrum quisque non tellus. Habitasse platea dictumst quisque sagittis purus sit amet. Tellus molestie nunc non blandit massa. Cursus vitae congue mauris rhoncus. Accumsan tortor posuere ac ut. Fringilla urna porttitor rhoncus dolor. Elit ullamcorper dignissim cras tincidunt lobortis. In cursus turpis massa tincidunt dui ut ornare lectus. Integer feugiat scelerisque varius morbi enim nunc. Bibendum neque egestas congue quisque egestas diam. Cras ornare arcu dui vivamus arcu felis bibendum. Dignissim suspendisse in est ante in nibh mauris. Sed tempus urna et pharetra pharetra massa massa ultricies mi.
+We are doing this to show you the demo. You can try yourself very much on your physical system because Docker in itself a next level to VM as they are small, less resource intensive, has a quick startup and runtime and with container management tool or an orchestration tool, we can scale it high
 
-Mollis nunc sed id semper risus in. Convallis a cras semper auctor neque. Diam sit amet nisl suscipit. Lacus viverra vitae congue eu consequat ac felis donec. Egestas integer eget aliquet nibh praesent tristique magna sit amet. Eget magna fermentum iaculis eu non diam. In vitae turpis massa sed elementum. Tristique et egestas quis ipsum suspendisse ultrices. Eget lorem dolor sed viverra ipsum. Vel turpis nunc eget lorem dolor sed viverra. Posuere ac ut consequat semper viverra nam. Laoreet suspendisse interdum consectetur libero id faucibus. Diam phasellus vestibulum lorem sed risus ultricies tristique. Rhoncus dolor purus non enim praesent elementum facilisis. Ultrices tincidunt arcu non sodales neque. Tempus egestas sed sed risus pretium quam vulputate. Viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare. Fringilla urna porttitor rhoncus dolor purus non. Amet dictum sit amet justo donec enim.
+Lets, setup the installation of Docker, we will go to [https://docs.docker.com/] to refer any doubts which is readily available.
 
-Mattis ullamcorper velit sed ullamcorper morbi tincidunt. Tortor posuere ac ut consequat semper viverra. Tellus mauris a diam maecenas sed enim ut sem viverra. Venenatis urna cursus eget nunc scelerisque viverra mauris in. Arcu ac tortor dignissim convallis aenean et tortor at. Curabitur gravida arcu ac tortor dignissim convallis aenean et tortor. Egestas tellus rutrum tellus pellentesque eu. Fusce ut placerat orci nulla pellentesque dignissim enim sit amet. Ut enim blandit volutpat maecenas volutpat blandit aliquam etiam. Id donec ultrices tincidunt arcu. Id cursus metus aliquam eleifend mi.
+We don’t need Docker desktop, If you are a old linux user, you already know the answer.
 
-Tempus quam pellentesque nec nam aliquam sem. Risus at ultrices mi tempus imperdiet. Id porta nibh venenatis cras sed felis eget velit. Ipsum a arcu cursus vitae. Facilisis magna etiam tempor orci eu lobortis elementum. Tincidunt dui ut ornare lectus sit. Quisque non tellus orci ac. Blandit libero volutpat sed cras. Nec tincidunt praesent semper feugiat nibh sed pulvinar proin gravida. Egestas integer eget aliquet nibh praesent tristique magna.
+if you are new to linux, not alone Docker Desktop, for any Desktop Environment applications, which has a point and click actions/event called as GUI Graphical User Interface will always be resource intensive.
+
+and if you stop and think for a second, why do we need to suffer inside a terminal (like me), instead of taking an easy approach, we are in to the paradoxical abstraction of simple is hard.
+
+Meaning, if you think it is easy, you haven’t understood the problem. And, when you understand the problem it becomes easy.
+
+To the topic, Linux is by nature, friendly with its approach on system design having the client server architecture adopted within its system. With that, Docker Engine is the core process/service running continuously called dockerd on the backend which we call it a deamon (a unknown force) runs until we interrupt it.
+
+Docker has a convenience script at [https://get.docker.com/] to install it on the linux OS
+
+run the curl -fsSL [https://get.docker.com](https://get.docker.com/) -o [get-docker.sh](http://get-docker.sh/)
+
+sudo groupadd docker
+
+sudo usermod -aG docker $USER
+
+now login to docker hub using the cli. docker login
+
+**Running Docker Server from local machine:**
+
+when you run the command Docker version, it will show the detailed description of Docker server and client information. As i said, you can operate the server (the other remote machine) without ssh-ing into it when you set the export variable with the remote server name and ip address.
+
+export the environment variable in the local machine
+
+export DOCKER_HOST=ssh:///username@ipaddress
+
+now if you run docker context ls it will show you the details of the environment variable set
+
+you can unset the env variable with unset DOCKER_HOST
+
+## Lets build a small Python app
+
+```python
+from flask import Flask, render_template
+import subprocess
+
+app = Flask(__name__)
+
+def get_fortune():
+   try:
+       result = subprocess.check_output(['/usr/games/fortune', '-s'], stderr=subprocess.STDOUT, text=True)
+       fortune = result.strip()
+   except subprocess.CalledProcessError:
+       fortune = "Error: 'fortune' command not available"
+   return fortune
+
+@app.route('/')
+def display_fortune():
+   fortune = get_fortune()
+   return render_template('index.html', fortune=fortune)
+
+if __name__ == '__main__':
+   app.run(host='0.0.0.0', port=8000)
+```
+
+once, we tested the [app.py](http://app.py) in our local environment, now we can create the Dockerfile and move the source code to containerize the app
+
+```python
+# Use an official Python runtime with minimal dependencies as the parent image
+FROM python:3-slim
+
+# Install Flask and the system package for fortune
+RUN pip install flask
+RUN apt-get update && apt-get install -y fortune
+
+# Create a directory for the application
+WORKDIR /app
+
+# Copy the Python script and HTML template into the container
+COPY app.py /app/
+COPY templates/ /app/templates/
+
+# Expose port 8000 for the web application
+EXPOSE 8000
+
+# Set the startup command
+CMD ["python", "app.py"]
+```
+
+and then once we compiled, we can build the Docker image with the below build command
+
+```bash
+docker build -t your_image_name:your_tag path/to/your/Dockerfile/directory
+```
+
+if it got compiled without any errors, you can see the built image with command
+
+docker images
+
+Now, we can push the build image to our Docker repository by issuing command
+
+You should be logged-in your terminal to push or pull images from Docker Hub. Same as github this is an image repository of Docker and there are several others as well like Azure, AWS images repository or your company might have one on their own to maintain their private repository.
+
+```bash
+docker push your_repository_name/your_image_name:your_tag
+```
+
+You can pull the publicly available/hosted images and run it in your machine
